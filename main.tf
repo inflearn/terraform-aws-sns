@@ -1,27 +1,34 @@
 resource "aws_sns_topic" "this" {
-  count = var.create_sns_topic ? 1 : 0
+  for_each = {for t in var.topics : "${try(t.name, "")}${try(t.name_prefix, "")}" => t}
 
-  name        = var.name
-  name_prefix = var.name_prefix
-
-  display_name                             = var.display_name
-  policy                                   = var.policy
-  delivery_policy                          = var.delivery_policy
-  application_success_feedback_role_arn    = var.application_success_feedback_role_arn
-  application_success_feedback_sample_rate = var.application_success_feedback_sample_rate
-  application_failure_feedback_role_arn    = var.application_failure_feedback_role_arn
-  http_success_feedback_role_arn           = var.http_success_feedback_role_arn
-  http_success_feedback_sample_rate        = var.http_success_feedback_sample_rate
-  http_failure_feedback_role_arn           = var.http_failure_feedback_role_arn
-  lambda_success_feedback_role_arn         = var.lambda_success_feedback_role_arn
-  lambda_success_feedback_sample_rate      = var.lambda_success_feedback_sample_rate
-  lambda_failure_feedback_role_arn         = var.lambda_failure_feedback_role_arn
-  sqs_success_feedback_role_arn            = var.sqs_success_feedback_role_arn
-  sqs_success_feedback_sample_rate         = var.sqs_success_feedback_sample_rate
-  sqs_failure_feedback_role_arn            = var.sqs_failure_feedback_role_arn
-  kms_master_key_id                        = var.kms_master_key_id
-  fifo_topic                               = var.fifo_topic
-  content_based_deduplication              = var.content_based_deduplication
+  name                                     = try(each.value.name, null)
+  name_prefix                              = try(each.value.name_prefix, null)
+  display_name                             = try(each.value.display_name, null)
+  policy                                   = try(each.value.policy, null)
+  delivery_policy                          = try(each.value.delivery_policy, null)
+  application_success_feedback_role_arn    = try(each.value.application_success_feedback_role_arn, null)
+  application_success_feedback_sample_rate = try(each.value.application_success_feedback_sample_rate, null)
+  application_failure_feedback_role_arn    = try(each.value.application_failure_feedback_role_arn, null)
+  http_success_feedback_role_arn           = try(each.value.http_success_feedback_role_arn, null)
+  http_success_feedback_sample_rate        = try(each.value.http_success_feedback_sample_rate, null)
+  http_failure_feedback_role_arn           = try(each.value.http_failure_feedback_role_arn, null)
+  lambda_success_feedback_role_arn         = try(each.value.lambda_success_feedback_role_arn, null)
+  lambda_success_feedback_sample_rate      = try(each.value.lambda_success_feedback_sample_rate, null)
+  lambda_failure_feedback_role_arn         = try(each.value.lambda_failure_feedback_role_arn, null)
+  sqs_success_feedback_role_arn            = try(each.value.sqs_success_feedback_role_arn, null)
+  sqs_success_feedback_sample_rate         = try(each.value.sqs_success_feedback_sample_rate, null)
+  sqs_failure_feedback_role_arn            = try(each.value.sqs_failure_feedback_role_arn, null)
+  kms_master_key_id                        = try(each.value.kms_master_key_id, null)
+  fifo_topic                               = try(each.value.fifo_topic, null)
+  content_based_deduplication              = try(each.value.content_based_deduplication, null)
 
   tags = var.tags
+}
+
+resource "aws_sns_topic_subscription" "sqs" {
+  for_each = {for t in var.topics : "${try(t.name, "")}${try(t.name_prefix, "")}" => t if t.sqs_endpoint != null}
+
+  topic_arn = aws_sns_topic.this[each.key].arn
+  protocol  = "sqs"
+  endpoint  = each.value.sqs_endpoint
 }
