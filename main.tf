@@ -28,7 +28,8 @@ resource "aws_sns_topic" "this" {
 resource "aws_sns_topic_subscription" "sqs" {
   for_each = {for t in var.topics : "${try(t.name, "")}${try(t.name_prefix, "")}" => t if t.sqs_endpoint != null}
 
-  topic_arn = aws_sns_topic.this[each.key].arn
-  protocol  = "sqs"
-  endpoint  = each.value.sqs_endpoint
+  topic_arn            = aws_sns_topic.this[each.key].arn
+  protocol             = "sqs"
+  endpoint             = each.value.sqs_endpoint
+  raw_message_delivery = try(each.value.raw_message_delivery, null)
 }
